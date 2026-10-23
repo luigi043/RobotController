@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Robot Controller</string>
+
+    <!-- Sections -->
+    <string name="section_connection">Bluetooth Connection</string>
+    <string name="section_movement">Movement Control</string>
+    <string name="section_colour_mode">Colour &amp; Mode</string>
+    <string name="section_data">Robot Data</string>
+
+    <!-- Connection status -->
+    <string name="status_disconnected">Disconnected</string>
+    <string name="status_connecting">Connecting to %1$s…</string>
+    <string name="status_connected">Connected: %1$s</string>
+    <string name="status_error">Connection Error</string>
+
+    <!-- Buttons -->
+    <string name="btn_connect">Connect</string>
+    <string name="btn_disconnect">Disconnect</string>
+    <string name="btn_clear">Clear</string>
+    <string name="btn_red">Red</string>
+    <string name="btn_blue">Blue</string>
+    <string name="btn_green">Green</string>
+
+    <!-- Auto mode -->
+    <string name="auto_mode_off">AUTO MODE: OFF</string>
+    <string name="auto_mode_on">AUTO MODE: ON  ✓</string>
+
+    <!-- Data log -->
+    <string name="no_data">No data received yet…</string>
+
+    <!-- Hints -->
+    <string name="hint_hold">Hold to move · Release to stop</string>
+</resources>
