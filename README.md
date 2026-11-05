@@ -1,166 +1,73 @@
-# 🤖 Robot Controller — Android Bluetooth App
+# Robot Controller
 
-A production-ready Android app in Kotlin that connects to an HC-05 or ESP32 Bluetooth module
-and controls a robot in real time using RFCOMM serial commands.
+An Android controller for a paired Classic Bluetooth robot using newline-delimited RFCOMM serial commands. The project uses Kotlin, Android Views, Material Components and coroutines. Its scope is robot prototyping and demonstrations. Hardware compatibility and production readiness have not been established.
 
----
+The Android app includes an explicit **offline demo**, using an in-memory transport. The separate [phone-style browser demo](docs/demo/index.html) illustrates controls and robot movement in JavaScript. Neither simulation tests physical motors, Bluetooth pairing or radio reliability.
 
-## 📁 Project Structure
+## Build
 
-```
-RobotController/
-├── app/
-│   ├── build.gradle                          ← App-level dependencies
-│   └── src/main/
-│       ├── AndroidManifest.xml               ← Permissions (Android 10–14+)
-│       ├── java/com/robotcontroller/
-│       │   ├── MainActivity.kt               ← UI, permissions, button logic
-│       │   └── bluetooth/
-│       │       ├── BluetoothManager.kt       ← RFCOMM socket + coroutine I/O
-│       │       └── CommandHandler.kt         ← Command string constants
-│       └── res/
-│           ├── layout/
-│           │   ├── activity_main.xml         ← Full Material Design UI
-│           │   ├── spinner_item.xml
-│           │   └── spinner_dropdown_item.xml
-│           ├── drawable/
-│           │   ├── ic_status_connected.xml   ← Green dot
-│           │   ├── ic_status_connecting.xml  ← Amber dot
-│           │   ├── ic_status_disconnected.xml← Red dot
-│           │   ├── bg_spinner.xml            ← Spinner background
-│           │   ├── ic_robot.xml              ← Toolbar icon
-│           │   └── ic_refresh.xml            ← Refresh icon
-│           └── values/
-│               ├── colors.xml
-│               ├── strings.xml
-│               └── themes.xml
-└── build.gradle                              ← Project-level plugins
+Open this existing folder in Android Studio. Do not create a second project or copy root-level source files.
+
+Requirements: JDK 17, Android SDK 34 and the included Gradle 8.5 wrapper. Minimum Android version is API 23; target SDK is 34. Set `JAVA_HOME` to your JDK and `ANDROID_HOME` to your SDK, or set `sdk.dir` in an ignored `local.properties`.
+
+```powershell
+./gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest :app:lintDebug --no-daemon --max-workers=2
 ```
 
----
+The debug APK is `app/build/outputs/apk/debug/app-debug.apk`, package `com.robotcontroller.debug`. It is an evaluation build, not a signed store release. No API key, account or backend is needed.
 
-## 🚀 Quick Setup in Android Studio
+## Use
 
-### 1. Create a new project
-- Open Android Studio → **New Project** → **Empty Views Activity**
-- Name: `RobotController`
-- Package: `com.robotcontroller`
-- Language: Kotlin
-- Min SDK: API 23
+- **Offline demo:** Start offline demo, then use movement, colour and auto-toggle controls. Replies start with `SIM`. Simulate connection loss tests error handling without hardware. Clear empties the visible data log.
+- **Physical robot:** Pair a compatible SPP robot in Android Bluetooth settings first. Refresh, grant Nearby devices permission on Android 12+, select the paired robot, and Connect. Refresh can open the system Bluetooth-enable prompt. App permissions opens this app's Android settings if permission was denied.
+- Hold a direction to send movement, then release or cancel to send Stop. Keyboard or accessibility activation sends a movement/Stop pair. The native UI reports the connection, not an unconfirmed firmware auto-mode state.
+- Leaving the control screen closes the session. A Stop is queued on departure, but immediate closure, process death or radio loss can prevent delivery. Robot firmware needs its own command timeout/watchdog. The app is not a safety controller.
+- The last selected device is remembered; the app does not automatically reconnect.
 
-### 2. Copy files
-Replace/create each file listed in the structure above with the provided source files.
-The fastest way: use **File > Open** on the `RobotController/` folder directly.
+Only paired devices are listed. The app does not scan for nearby devices or request location. Android 12+ uses `BLUETOOTH_CONNECT`; older releases use manifest Bluetooth permissions. Bluetooth hardware is optional for the offline demo. Standard SPP UUID: `00001101-0000-1000-8000-00805F9B34FB`. The existing reflective channel-1 socket-creation fallback is retained as a best-effort compatibility path; physical behavior is unverified.
 
-### 3. Sync & Build
-- Click **Sync Now** when prompted for Gradle sync
-- Run on a real device (Bluetooth does not work on emulators)
+## Protocol
 
----
+| Control | Bytes sent | Interaction |
+| --- | --- | --- |
+| Forward | `F\n` | Press; `S\n` on release/cancel |
+| Backward | `B\n` | Press; `S\n` on release/cancel |
+| Left | `L\n` | Press; `S\n` on release/cancel |
+| Right | `R\n` | Press; `S\n` on release/cancel |
+| Stop | `S\n` | Tap |
+| Red / Blue / Green | `RED\n` / `BLUE\n` / `GREEN\n` | Tap |
+| Toggle auto mode | `AUTO\n` | Firmware decides the resulting mode |
 
-## 🔑 Permissions Handled
+Incoming UTF-8 lines are shown newest first. Oversized lines are discarded through the next newline to prevent a truncated line being treated as valid data. The visible log is bounded. Socket writes are ordered within a connection and are never redirected to a later session.
 
-| Android Version | Permissions Used |
-|---|---|
-| ≤ 11 (API 30) | `BLUETOOTH`, `BLUETOOTH_ADMIN`, `ACCESS_FINE_LOCATION` |
-| 12+ (API 31+) | `BLUETOOTH_CONNECT`, `BLUETOOTH_SCAN` (neverForLocation) |
-| All | `VIBRATE` |
+## Verification
 
-Runtime permission requests are handled automatically in `MainActivity`.
+[Verification notes](docs/verification/README.md), [screen index](docs/verification/SCREEN-INDEX.md) and [test results](docs/verification/RESULTS.md) distinguish native captures, browser captures and hardware limits.
 
----
+Run the native walkthrough only on a synthetic-data emulator:
 
-## 🎮 Command Reference
-
-| Button | Command Sent | Behaviour |
-|---|---|---|
-| ▲ Forward | `F\n` | Sent on **press**, `S\n` on **release** |
-| ▼ Backward | `B\n` | Sent on **press**, `S\n` on **release** |
-| ◄ Left | `L\n` | Sent on **press**, `S\n` on **release** |
-| ► Right | `R\n` | Sent on **press**, `S\n` on **release** |
-| ■ Stop | `S\n` | Tap to stop immediately |
-| Red | `RED\n` | Single tap |
-| Blue | `BLUE\n` | Single tap |
-| Green | `GREEN\n` | Single tap |
-| Auto Mode | `AUTO\n` | Toggle (re-sends each tap) |
-
----
-
-## 📡 Arduino / ESP32 Firmware Example
-
-```cpp
-#include <BluetoothSerial.h>
-BluetoothSerial BT;
-
-void setup() {
-  Serial.begin(115200);
-  BT.begin("MyRobot");  // Must match the paired device name
-  // setup motor pins, LED pins, etc.
-}
-
-void loop() {
-  if (BT.available()) {
-    String cmd = BT.readStringUntil('\n');
-    cmd.trim();
-
-    if      (cmd == "F")    moveForward();
-    else if (cmd == "B")    moveBackward();
-    else if (cmd == "L")    turnLeft();
-    else if (cmd == "R")    turnRight();
-    else if (cmd == "S")    stopMotors();
-    else if (cmd == "RED")  setLED(255, 0, 0);
-    else if (cmd == "BLUE") setLED(0, 0, 255);
-    else if (cmd == "GREEN")setLED(0, 255, 0);
-    else if (cmd == "AUTO") toggleAutoMode();
-
-    // Optional: send sensor data back
-    BT.println("OK:" + cmd);
-  }
-}
+```powershell
+./scripts/verify-native.ps1 -Serial emulator-5554
 ```
 
-For HC-05 use `SoftwareSerial` instead of `BluetoothSerial`:
-```cpp
-#include <SoftwareSerial.h>
-SoftwareSerial bt(10, 11); // RX, TX
-// bt.begin(9600);
+The script checks the emulator identity, installs this app and its test APK, and clears **only this app's** data. It exercises Android permission/settings screens, so it must not be pointed at a personal device. `-SkipBuild` is appropriate only after checking the exact current source.
+
+Browser checks reuse an installed Playwright package and Chromium:
+
+```powershell
+node scripts/check-demo.cjs
+node scripts/serve-demo.cjs
 ```
 
----
+`PLAYWRIGHT_MODULE` and `CHROMIUM_PATH` can point to existing tools. `DEMO_URL` selects a deployed page; `SCREENSHOT_DIR` chooses capture output. The preview binds only to `127.0.0.1:4349`.
 
-## 🏗️ Architecture
+## Source layout
 
-```
-┌─────────────────────────────────────────┐
-│           MainActivity (UI layer)        │
-│  • Observes StateFlow / SharedFlow       │
-│  • Handles runtime permissions           │
-│  • Vibration feedback on button press    │
-│  • Saves/restores last device (Prefs)    │
-└────────────────┬────────────────────────┘
-                 │ calls
-┌────────────────▼────────────────────────┐
-│         BluetoothManager                │
-│  • Coroutine scope (Dispatchers.IO)      │
-│  • RFCOMM socket lifecycle               │
-│  • Emits: uiState (StateFlow)            │
-│           receivedLine (SharedFlow)      │
-│  • Fallback socket for HC-05             │
-└────────────────┬────────────────────────┘
-                 │ uses
-┌────────────────▼────────────────────────┐
-│         CommandHandler (object)          │
-│  • Command string constants              │
-│  • send() helper (checks isConnected)    │
-└─────────────────────────────────────────┘
-```
+- `app/src/main`: compiled Android UI, resources and transports.
+- `app/src/test`: JVM transport/session regression tests using synthetic connections.
+- `app/src/androidTest`: real Android UI walkthrough and screenshot collection.
+- `docs/demo`: separate browser simulation source.
+- `docs/verification`: reproducible evidence and limitations.
+- `scripts`: verification, preview and public packaging helpers.
 
----
-
-## 🛠️ Extra Notes
-
-- **Hold-to-move** — directional buttons send continuous command on press, `S\n` on release
-- **Auto-reconnect** — last device address is persisted in SharedPreferences; spinner pre-selects it on next launch
-- **Thread safety** — all socket I/O runs on `Dispatchers.IO`; UI updates via `lifecycleScope` on Main
-- **Graceful cleanup** — `BluetoothManager.cleanup()` is called in `onDestroy()` to close the socket and cancel the coroutine scope, preventing leaks
-- **Fallback socket** — if `createRfcommSocketToServiceRecord` fails (common with HC-05), the manager automatically retries with `createRfcommSocket(1)`
+Obsolete root-level copies were removed to leave one compiled source of truth. Gradle wrapper licenses and original Git authorship remain intact.

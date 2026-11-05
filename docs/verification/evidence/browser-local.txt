@@ -1,0 +1,1 @@
+PASS: disabled controls, connect, pointer hold/release and movement, keyboard release, blur STOP, RGB, auto/STOP, loss, reconnect/disconnect, clear, reset, mobile overflow, zero browser errors.

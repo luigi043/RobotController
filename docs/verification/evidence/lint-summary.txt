@@ -1,0 +1,9 @@
+Task :app:lintDebug
+0 errors, 26 warnings
+OldTargetApi: 1
+GradleDependency: 10
+LockedOrientationActivity: 1
+DataExtractionRules: 1
+Overdraw: 1
+UnusedResources: 7
+HardcodedText: 5

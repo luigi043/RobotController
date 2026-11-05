@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robotcontroller.bluetooth.BluetoothManagerTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-05T02:33:44" hostname="TOOLS" time="0.582">
+  <properties/>
+  <testcase name="orderedCommandsAndDisconnectUnblocksRead" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.345"/>
+  <testcase name="refusedConnectionClosesTransportAndAllowsRetry" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.009"/>
+  <testcase name="disconnectCancelsPendingConnectWithoutStaleSuccess" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.11"/>
+  <testcase name="utf8AndOversizedLinesAreFramedWithoutTruncatedCommands" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.051"/>
+  <testcase name="simulationAcknowledgesCommandsWithoutHardware" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.024"/>
+  <testcase name="writesFromOldSessionCannotReachNewRobot" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.031"/>
+  <testcase name="remoteEndOfStreamLeavesConnectedState" classname="com.robotcontroller.bluetooth.BluetoothManagerTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

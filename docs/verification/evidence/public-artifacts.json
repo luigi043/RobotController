@@ -1,0 +1,116 @@
+[
+  {
+    "file": "app.js",
+    "size": 4178,
+    "sha1": "5638a156f6e43ac0f86569b5b6603a17e209ce0e",
+    "sha256": "e8c3accba4ef812822603240022d187fda58004c1726a5be4beda696b03ae9b5"
+  },
+  {
+    "file": "index.html",
+    "size": 4251,
+    "sha1": "1e9421a843865e01966cf150dd10b3f982759271",
+    "sha256": "9142ed4e35a29c32b7b0afafea2a3c19033d2192502be75a6d018e984af74311"
+  },
+  {
+    "file": "native/01-launch-no-permission.png",
+    "size": 107666,
+    "sha1": "6436364e77c1b319f1e1fc2c7753676bfb02bd60",
+    "sha256": "35b555cdf71cdfaea47b6c09995b3507326282a2e10d50b57c9d6bf7074aba24"
+  },
+  {
+    "file": "native/02-nearby-permission-dialog.png",
+    "size": 113903,
+    "sha1": "beb7b004824117a203d88a6d0aa801b0a33ba066",
+    "sha256": "3cf98f32ca515f37961031460bdb87173fea933e3f67d136b615ba621cec7aea"
+  },
+  {
+    "file": "native/03-permission-denied.png",
+    "size": 108559,
+    "sha1": "6a028c7dc1c4c993719ec3b30841923c61bc762c",
+    "sha256": "dc02373a88e04a267af71a6aa409dc16dc0fb230f9e31d8c0cd55494a1480c27"
+  },
+  {
+    "file": "native/04-system-app-permissions.png",
+    "size": 88696,
+    "sha1": "440d288ae44a3005954fd1d24bb7300d08a4579d",
+    "sha256": "8d019d96e66c0ca82814d9f0e57e8e2816af4bb5735f94dfe1d37ae2e79deddb"
+  },
+  {
+    "file": "native/05-enable-bluetooth-dialog.png",
+    "size": 103333,
+    "sha1": "ef4f33528a356ce731e8b0a18e3231ad719abd0d",
+    "sha256": "f27d188c75efba2f55e3bf72408d395937b1cadfeac62a886a23d5a7cf621c4d"
+  },
+  {
+    "file": "native/06-no-paired-devices.png",
+    "size": 107169,
+    "sha1": "8078e5531aa643c4f6d7ed4b9bfa9ef8d064ad6d",
+    "sha256": "0ecfecf24ca4d76aa540aa49488a5a8ec0a7b6a94bf97f02a0053a934b199cfd"
+  },
+  {
+    "file": "native/07-system-bluetooth-settings.png",
+    "size": 104686,
+    "sha1": "f965ccfabfcffb4988de45e16241326659370bde",
+    "sha256": "fda92b19df49ad515cedb547d98eb6e06900fab6ddbc4ba61f79011843d028d0"
+  },
+  {
+    "file": "native/08-demo-connected.png",
+    "size": 121016,
+    "sha1": "0c9276fddcf997acc67bec18d3dcd66a72c8abcf",
+    "sha256": "ce0f527dea2250d65d4059b8a1358050069aeb6b6dded78b015eb784f1e851ad"
+  },
+  {
+    "file": "native/09-controls-and-simulated-log.png",
+    "size": 120788,
+    "sha1": "7e591a4a6312cdca1778f5563cc5959be7331c32",
+    "sha256": "d59583be20e28421514209990931ec5dc65fee2c3e595fed60f903984bdee3b2"
+  },
+  {
+    "file": "native/10-cleared-log.png",
+    "size": 89676,
+    "sha1": "08d4460b5e2365ab7310d7e708b17732405361fa",
+    "sha256": "3d9c9486b5d08b876c555be4b606412f6337df6e497bd4b41675ce0ac292d425"
+  },
+  {
+    "file": "native/11-simulated-connection-loss.png",
+    "size": 103812,
+    "sha1": "a3f0dda4969ba03c5552fde9a03cb6f84f273219",
+    "sha256": "e52c5747a249eb550af547e4a1ad995e15d652a5276fb46ec2b02bdcd3c81c1a"
+  },
+  {
+    "file": "native/12-manual-disconnect.png",
+    "size": 106038,
+    "sha1": "293e539f9549493dc877f423c50f3ee7d3a69c34",
+    "sha256": "9117bd8a268f8671125e4fc8bca111d7fd03da443008250bdbfb26dc6bfae1e0"
+  },
+  {
+    "file": "native/13-recreated-disconnected.png",
+    "size": 106282,
+    "sha1": "b7d7c234865adab5ef3eee17c37d8ff71192ee5f",
+    "sha256": "af3f4ebd87ba5e1765a1c26637091f266e8fa4240c1bee0f1ff5cc7c4c77a5b6"
+  },
+  {
+    "file": "native.html",
+    "size": 4441,
+    "sha1": "473fd8e786f57c8e7b6f6ad8a1cb78d0ed9ccfa2",
+    "sha256": "8876513c84f9d96743d471f4105075f3e21c70c5abae2f4554437e21302aed1a"
+  },
+  {
+    "file": "robot-controller-debug.apk",
+    "size": 6977065,
+    "sha1": "bc7636888aa6a3d55157f21ff86681da51338a96",
+    "sha256": "c70fc675cd27ea28740a169cba9ecc98fe1d2a5e6bf496b49f099d48612951dc"
+  },
+  {
+    "file": "style.css",
+    "size": 8025,
+    "sha1": "6b502a99591c18529d5a30eef43083ae6561e2a0",
+    "sha256": "f9b5b1e2432b20a7e7816534709228f7fa24e9a9764b30cb1eedf924983c2cb1"
+  },
+  {
+    "file": "vercel.json",
+    "size": 493,
+    "sha1": "7292c360419c169d0a5ac8ec63d17f3884e5a784",
+    "sha256": "ef3e98a0036b2c79e2e7608cfd636f2ee9920a7112c39a1717c707bc225ed31e"
+  }
+]
