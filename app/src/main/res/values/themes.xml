@@ -5,7 +5,7 @@
         Base theme – extends Material3 DayNight without the default action bar
         (we use a MaterialToolbar in the layout instead).
     -->
-    <style name="Theme.RobotController" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.RobotController" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
         <item name="colorOnPrimary">@color/colorOnPrimary</item>
@@ -18,6 +18,7 @@
         <item name="colorSurface">@color/colorSurface</item>
         <item name="colorOnSurface">@color/colorOnSurface</item>
         <item name="android:statusBarColor">@color/primary_dark</item>
+
         <item name="android:navigationBarColor">@color/screen_background</item>
         <!-- Disable default action bar -->
         <item name="windowActionBar">false</item>

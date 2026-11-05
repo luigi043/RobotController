@@ -6,354 +6,208 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager as SystemBtManager
 import android.content.Context
-import android.content.SharedPreferences
+import android.content.Intent
+import android.net.Uri
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import android.provider.Settings
 import android.view.MotionEvent
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.robotcontroller.bluetooth.BluetoothManager
-import com.robotcontroller.bluetooth.CommandHandler
-import com.robotcontroller.bluetooth.ConnectionState
+import com.robotcontroller.bluetooth.*
 import com.robotcontroller.databinding.ActivityMainBinding
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  MainActivity
-//  Owns the UI; delegates all BT I/O to BluetoothManager.
-// ─────────────────────────────────────────────────────────────────────────────
-
 class MainActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityMainBinding
-
-    // Bluetooth
-    private val btManager       = BluetoothManager()
-    private var bluetoothAdapter: BluetoothAdapter? = null
-    private var pairedDevices: List<BluetoothDevice> = emptyList()
-
-    // UI state
-    private var isAutoMode  = false
-    private val dataLog     = StringBuilder()
-    private val timeFmt     = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-
-    // Prefs (save last device, auto-reconnect preference)
-    private lateinit var prefs: SharedPreferences
-
-    // ── Permission launcher ───────────────────────────────────────────────────
-
-    private val permLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { granted ->
-        if (granted.values.all { it }) {
-            loadPairedDevices()
-        } else {
-            toast("Bluetooth permissions are required to use this app")
-        }
+    private val manager = BluetoothManager()
+    private var adapter: BluetoothAdapter? = null
+    private var devices: List<BluetoothDevice> = emptyList()
+    private var demo: DemoRobotConnection? = null
+    private var permissionDenied = false
+    private val log = StringBuilder()
+    private val clock = SimpleDateFormat("HH:mm:ss", Locale.ENGLISH)
+    private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        permissionDenied = !hasPermission()
+        loadDevices()
     }
+    private val enableBluetooth = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { loadDevices() }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    override fun attachBaseContext(base: Context) {
+        val config = Configuration(base.resources.configuration)
+        config.setLocale(Locale.ENGLISH)
+        super.attachBaseContext(base.createConfigurationContext(config))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-
-        prefs = getSharedPreferences("RobotPrefs", Context.MODE_PRIVATE)
-
-        initBluetooth()
-        setupButtons()
-        observeState()
-        checkPermissionsAndLoad()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        btManager.cleanup()
-    }
-
-    // ── Bluetooth initialisation ──────────────────────────────────────────────
-
-    private fun initBluetooth() {
-        val sysBtManager = getSystemService(Context.BLUETOOTH_SERVICE) as SystemBtManager
-        bluetoothAdapter = sysBtManager.adapter
-
-        if (bluetoothAdapter == null) {
-            toast("Bluetooth not supported on this device")
-            finish()
-            return
-        }
-
-        if (bluetoothAdapter?.isEnabled == false) {
-            toast("Please enable Bluetooth then restart the app")
-        }
-    }
-
-    // ── Button / touch setup ──────────────────────────────────────────────────
-
-    private fun setupButtons() {
-        // ── Connection ────────────────────────────────────────────────────────
-        binding.btnRefresh.setOnClickListener { checkPermissionsAndLoad() }
-
+        WindowInsetsControllerCompat(window, binding.root).isAppearanceLightNavigationBars = true
+        adapter = (getSystemService(Context.BLUETOOTH_SERVICE) as SystemBtManager).adapter
+        binding.btnRefresh.setOnClickListener { refresh() }
+        binding.btnSettings.setOnClickListener { startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }
+        binding.btnAppSettings.setOnClickListener { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))) }
         binding.btnConnect.setOnClickListener {
-            val idx = binding.spinnerDevices.selectedItemPosition
-            if (idx in pairedDevices.indices) {
-                val device = pairedDevices[idx]
-                prefs.edit().putString(PREF_LAST_ADDR, device.address).apply()
-                btManager.connect(device)
-            } else {
-                toast("Select a paired device first")
+            if (!hasPermission()) { refresh(); return@setOnClickListener }
+            devices.getOrNull(binding.spinnerDevices.selectedItemPosition)?.let { device ->
+                try {
+                    getSharedPreferences("RobotPrefs", MODE_PRIVATE).edit().putString("last_device_address", device.address).apply()
+                    manager.connect(AndroidRobotConnection(device))
+                } catch (_: SecurityException) { showMessage("Bluetooth permission denied. Refresh to retry.") }
             }
         }
-
-        binding.btnDisconnect.setOnClickListener {
-            btManager.disconnect()
+        binding.btnDisconnect.setOnClickListener { manager.disconnect() }
+        binding.btnDemo.setOnClickListener {
+            demo = DemoRobotConnection()
+            manager.connect(requireNotNull(demo))
         }
-
-        // ── Movement (hold-to-move → release sends STOP) ──────────────────────
-        setupHoldButton(binding.btnForward,  CommandHandler.FORWARD)
-        setupHoldButton(binding.btnBackward, CommandHandler.BACKWARD)
-        setupHoldButton(binding.btnLeft,     CommandHandler.LEFT)
-        setupHoldButton(binding.btnRight,    CommandHandler.RIGHT)
-
-        // Tap-stop centre button
-        binding.btnStop.setOnClickListener {
-            vibrate()
-            CommandHandler.send(btManager, CommandHandler.STOP)
+        binding.btnSimulateLoss.setOnClickListener { demo?.close() }
+        listOf(binding.btnForward to CommandHandler.FORWARD, binding.btnBackward to CommandHandler.BACKWARD,
+            binding.btnLeft to CommandHandler.LEFT, binding.btnRight to CommandHandler.RIGHT).forEach { (view, command) -> setupMovement(view, command) }
+        listOf(binding.btnStop to CommandHandler.STOP, binding.btnRed to CommandHandler.RED,
+            binding.btnBlue to CommandHandler.BLUE, binding.btnGreen to CommandHandler.GREEN,
+            binding.btnAutoMode to CommandHandler.AUTO).forEach { (view, command) ->
+            view.setOnClickListener { view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); manager.sendCommand(command) }
         }
-
-        // ── Colour ────────────────────────────────────────────────────────────
-        binding.btnRed.setOnClickListener   { vibrate(); CommandHandler.send(btManager, CommandHandler.RED)   }
-        binding.btnBlue.setOnClickListener  { vibrate(); CommandHandler.send(btManager, CommandHandler.BLUE)  }
-        binding.btnGreen.setOnClickListener { vibrate(); CommandHandler.send(btManager, CommandHandler.GREEN) }
-
-        // ── Auto mode toggle ──────────────────────────────────────────────────
-        binding.btnAutoMode.setOnClickListener {
-            vibrate()
-            isAutoMode = !isAutoMode
-            binding.btnAutoMode.text = if (isAutoMode) "AUTO MODE: ON ✓" else "AUTO MODE: OFF"
-            CommandHandler.send(btManager, CommandHandler.AUTO)
-        }
-
-        // ── Data log ──────────────────────────────────────────────────────────
-        binding.btnClearData.setOnClickListener {
-            dataLog.clear()
-            binding.tvReceivedData.text = getString(R.string.no_data)
-        }
-
-        // Initially disable all controls until connected
-        setControlsEnabled(false)
+        binding.btnClearData.setOnClickListener { log.clear(); binding.tvReceivedData.setText(R.string.no_data) }
+        lifecycleScope.launch { manager.uiState.collect { render(it) } }
+        lifecycleScope.launch { manager.receivedLine.collect { appendLog(it) } }
+        loadDevices() // Ask for permission only when the user chooses Refresh.
     }
 
-    /**
-     * Sends [command] on finger-down and STOP on finger-up/cancel.
-     * Also fires a short vibration on press.
-     */
+    override fun onResume() {
+        super.onResume()
+        if (::binding.isInitialized && !manager.isConnected && manager.uiState.value.connectionState != ConnectionState.CONNECTING) loadDevices()
+    }
+
+    override fun onStop() {
+        // Close the session when leaving the control screen; firmware must still
+        // implement a watchdog because radio loss cannot guarantee a STOP delivery.
+        if (manager.uiState.value.connectionState in listOf(ConnectionState.CONNECTED, ConnectionState.CONNECTING)) {
+            manager.sendCommand(CommandHandler.STOP)
+            manager.disconnect()
+        }
+        super.onStop()
+    }
+
+    override fun onDestroy() { manager.cleanup(); super.onDestroy() }
+
     @SuppressLint("ClickableViewAccessibility")
-    private fun setupHoldButton(view: View, command: String) {
+    private fun setupMovement(view: View, command: String) {
         view.setOnTouchListener { v, event ->
-            when (event.action) {
+            if (!v.isEnabled) return@setOnTouchListener false
+            when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    vibrate()
+                    v.parent.requestDisallowInterceptTouchEvent(true)
                     v.isPressed = true
-                    CommandHandler.send(btManager, command)
+                    v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                    manager.sendCommand(command)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.isPressed = false
-                    CommandHandler.send(btManager, CommandHandler.STOP)
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                    manager.sendCommand(CommandHandler.STOP)
                     true
                 }
-                else -> false
+                else -> true
             }
+        }
+        // TalkBack/keyboard activation makes a bounded movement pulse.
+        view.setOnClickListener { view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY); manager.sendCommand(command); manager.sendCommand(CommandHandler.STOP) }
+    }
+
+    private fun render(state: BluetoothUiState) {
+        val connected = state.connectionState == ConnectionState.CONNECTED
+        val busy = connected || state.connectionState == ConnectionState.CONNECTING
+        binding.tvStatus.text = when (state.connectionState) {
+            ConnectionState.CONNECTING -> "Connecting…"
+            ConnectionState.CONNECTED -> if (demo != null) "Demo connected" else "Connected"
+            ConnectionState.ERROR -> "Connection error"
+            else -> "Disconnected"
+        }
+        binding.viewStatusDot.setBackgroundResource(when {
+            connected -> R.drawable.ic_status_connected
+            busy -> R.drawable.ic_status_connecting
+            else -> R.drawable.ic_status_disconnected
+        })
+        binding.btnDisconnect.isEnabled = busy
+        binding.btnDemo.isEnabled = !busy
+        binding.btnRefresh.isEnabled = !busy
+        binding.btnSettings.isEnabled = !busy
+        binding.btnAppSettings.isEnabled = !busy
+        binding.spinnerDevices.isEnabled = !busy && devices.isNotEmpty()
+        binding.btnConnect.isEnabled = !busy && devices.isNotEmpty() && hasPermission()
+        listOf(binding.btnForward, binding.btnBackward, binding.btnLeft, binding.btnRight, binding.btnStop,
+            binding.btnRed, binding.btnBlue, binding.btnGreen, binding.btnAutoMode).forEach { it.isEnabled = connected }
+        binding.btnSimulateLoss.visibility = if (connected && demo != null) View.VISIBLE else View.GONE
+        if (connected) {
+            showMessage(if (demo != null) "SIMULATION: in-memory commands and responses. No Bluetooth or hardware is used."
+                else "Connected to ${state.connectedDeviceName}. Hold a direction, release to stop.")
+        } else if (state.connectionState == ConnectionState.ERROR) {
+            showMessage(state.errorMessage ?: "Connection failed. Refresh and reconnect.")
+            appendLog(state.errorMessage ?: "Connection lost")
+            demo = null
+        } else if (state.connectionState == ConnectionState.DISCONNECTED) {
+            demo = null
+            showMessage("Disconnected. Refresh paired devices or start the offline demo.")
         }
     }
 
-    // ── State observers ───────────────────────────────────────────────────────
+    private fun hasPermission() = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+        ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
 
-    private fun observeState() {
-        // Connection state → UI
-        btManager.uiState
-            .onEach { state -> updateConnectionUi(state.connectionState, state.connectedDeviceName, state.errorMessage) }
-            .launchIn(lifecycleScope)
-
-        // Incoming data lines → log
-        lifecycleScope.launch {
-            btManager.receivedLine.collect { line -> appendLog(line) }
-        }
+    private fun refresh() {
+        if (!hasPermission()) permissions.launch(arrayOf(Manifest.permission.BLUETOOTH_CONNECT))
+        else loadDevices(promptEnable = true)
     }
-
-    // ── UI update helpers ─────────────────────────────────────────────────────
-
-    private fun updateConnectionUi(state: ConnectionState, name: String?, error: String?) {
-        when (state) {
-            ConnectionState.IDLE, ConnectionState.DISCONNECTED -> {
-                setIndicator(IndicatorColor.RED)
-                binding.tvStatus.text = getString(R.string.status_disconnected)
-                binding.btnConnect.isEnabled    = true
-                binding.btnDisconnect.isEnabled = false
-                setControlsEnabled(false)
-                if (state == ConnectionState.DISCONNECTED) appendLog("── Disconnected ──")
-            }
-
-            ConnectionState.CONNECTING -> {
-                setIndicator(IndicatorColor.YELLOW)
-                binding.tvStatus.text = getString(R.string.status_connecting, name)
-                binding.btnConnect.isEnabled    = false
-                binding.btnDisconnect.isEnabled = false
-                setControlsEnabled(false)
-            }
-
-            ConnectionState.CONNECTED -> {
-                setIndicator(IndicatorColor.GREEN)
-                binding.tvStatus.text = getString(R.string.status_connected, name)
-                binding.btnConnect.isEnabled    = false
-                binding.btnDisconnect.isEnabled = true
-                setControlsEnabled(true)
-                appendLog("── Connected to $name ──")
-                toast("✓ Connected to $name")
-            }
-
-            ConnectionState.ERROR -> {
-                setIndicator(IndicatorColor.RED)
-                binding.tvStatus.text = error ?: getString(R.string.status_error)
-                binding.btnConnect.isEnabled    = true
-                binding.btnDisconnect.isEnabled = false
-                setControlsEnabled(false)
-                appendLog("── Error: $error ──")
-                toast(error ?: "Connection failed")
-            }
-        }
-    }
-
-    private enum class IndicatorColor { RED, YELLOW, GREEN }
-
-    private fun setIndicator(color: IndicatorColor) {
-        val drawableRes = when (color) {
-            IndicatorColor.RED    -> R.drawable.ic_status_disconnected
-            IndicatorColor.YELLOW -> R.drawable.ic_status_connecting
-            IndicatorColor.GREEN  -> R.drawable.ic_status_connected
-        }
-        binding.viewStatusDot.setBackgroundResource(drawableRes)
-    }
-
-    private fun setControlsEnabled(enabled: Boolean) {
-        listOf(
-            binding.btnForward, binding.btnBackward,
-            binding.btnLeft,    binding.btnRight,
-            binding.btnStop,    binding.btnRed,
-            binding.btnBlue,    binding.btnGreen,
-            binding.btnAutoMode
-        ).forEach { it.isEnabled = enabled }
-    }
-
-    private fun appendLog(line: String) {
-        val timestamp = timeFmt.format(Date())
-        dataLog.insert(0, "[$timestamp] $line\n")
-        if (dataLog.length > 4000) dataLog.delete(3000, dataLog.length)
-        binding.tvReceivedData.text = dataLog.toString()
-        // Auto-scroll to top (newest data)
-        binding.scrollViewData.scrollTo(0, 0)
-    }
-
-    // ── Permissions & paired device list ─────────────────────────────────────
-
-    private fun checkPermissionsAndLoad() {
-        val required = requiredPermissions()
-        val missing  = required.filter {
-            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
-        }
-        if (missing.isEmpty()) loadPairedDevices() else permLauncher.launch(missing.toTypedArray())
-    }
-
-    private fun requiredPermissions(): List<String> =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            listOf(
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
-            )
-        } else {
-            buildList {
-                add(Manifest.permission.BLUETOOTH)
-                add(Manifest.permission.BLUETOOTH_ADMIN)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                    add(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
 
     @SuppressLint("MissingPermission")
-    private fun loadPairedDevices() {
+    private fun loadDevices(promptEnable: Boolean = false) {
+        devices = emptyList()
         try {
-            val bonded = bluetoothAdapter?.bondedDevices ?: emptySet()
-            pairedDevices = bonded.sortedBy { it.name ?: it.address }
-
-            if (pairedDevices.isEmpty()) {
-                toast("No paired devices found — pair your robot in Settings first")
-                binding.spinnerDevices.adapter = null
-                return
-            }
-
-            val labels = pairedDevices.map {
-                "${it.name ?: "Unknown"}  (${it.address})"
-            }
-            val adapter = ArrayAdapter(this, R.layout.spinner_item, labels)
-            adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
-            binding.spinnerDevices.adapter = adapter
-
-            // Restore last-used device selection
-            val lastAddr = prefs.getString(PREF_LAST_ADDR, null)
-            lastAddr?.let { addr ->
-                val idx = pairedDevices.indexOfFirst { it.address == addr }
-                if (idx >= 0) binding.spinnerDevices.setSelection(idx)
-            }
-        } catch (e: SecurityException) {
-            toast("Permission denied: ${e.message}")
-        }
-    }
-
-    // ── Vibration ─────────────────────────────────────────────────────────────
-
-    private fun vibrate(ms: Long = 28) {
-        runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                vm.defaultVibrator.vibrate(
-                    VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                val v = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    v.vibrate(ms)
+            when {
+                adapter == null -> showMessage("Bluetooth is unavailable on this device. Try the offline demo.")
+                !hasPermission() -> showMessage(if (permissionDenied) "Nearby devices permission denied. Use Refresh to retry, or open App permissions." else "Refresh to allow nearby devices, or try the offline demo without permission.")
+                adapter?.isEnabled != true -> {
+                    showMessage("Bluetooth is off. Refresh to enable it, or try the offline demo.")
+                    if (promptEnable) enableBluetooth.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                }
+                else -> {
+                    devices = adapter?.bondedDevices.orEmpty().sortedBy { it.name ?: it.address }
+                    showMessage(if (devices.isEmpty()) "No paired devices. Pair your robot in Bluetooth settings, then Refresh."
+                        else "Select a paired robot, then Connect. The offline demo uses no hardware.")
                 }
             }
-        }
+            val labels = devices.map { "${it.name ?: "Unnamed device"} (${it.address})" }
+            binding.spinnerDevices.adapter = ArrayAdapter(this, R.layout.spinner_item, labels).also {
+                it.setDropDownViewResource(R.layout.spinner_dropdown_item)
+            }
+            val address = getSharedPreferences("RobotPrefs", MODE_PRIVATE).getString("last_device_address", null)
+            devices.indexOfFirst { it.address == address }.takeIf { it >= 0 }?.let { binding.spinnerDevices.setSelection(it) }
+        } catch (_: SecurityException) { showMessage("Bluetooth permission denied. Refresh to retry.") }
+        binding.btnConnect.isEnabled = devices.isNotEmpty() && hasPermission()
+        binding.spinnerDevices.isEnabled = devices.isNotEmpty()
     }
 
-    // ── Utilities ─────────────────────────────────────────────────────────────
-
-    private fun toast(msg: String) =
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-
-    companion object {
-        private const val PREF_LAST_ADDR = "last_device_address"
+    private fun showMessage(message: String) { binding.tvConnectionHelp.text = message }
+    private fun appendLog(line: String) {
+        log.insert(0, "[${clock.format(Date())}] $line\n")
+        if (log.length > 4000) log.delete(3000, log.length)
+        binding.tvReceivedData.text = log.toString()
+        binding.scrollViewData.scrollTo(0, 0)
     }
 }

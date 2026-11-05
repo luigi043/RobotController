@@ -93,9 +93,14 @@
 
                     </LinearLayout>
 
+                    <TextView android:id="@+id/tvConnectionHelp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:textColor="@color/text_secondary" android:textSize="14sp" android:accessibilityLiveRegion="polite" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnDemo" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/start_demo" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnSimulateLoss" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/simulate_loss" android:visibility="gone" style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/bluetooth_settings" style="@style/Widget.MaterialComponents.Button.TextButton" />
+                    <com.google.android.material.button.MaterialButton android:id="@+id/btnAppSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/app_permissions" style="@style/Widget.MaterialComponents.Button.TextButton" />
                     <!-- Device spinner -->
                     <Spinner
-                        android:id="@+id/spinnerDevices"
+                        android:id="@+id/spinnerDevices" android:contentDescription="@string/paired_devices"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="14dp"
@@ -111,9 +116,9 @@
                         android:layout_marginTop="12dp">
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRefresh"
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
+                            android:id="@+id/btnRefresh" android:contentDescription="@string/refresh_devices"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
                             android:layout_marginEnd="8dp"
                             app:icon="@drawable/ic_refresh"
                             app:iconGravity="textStart"
@@ -122,18 +127,18 @@
                             style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnConnect"
+                            android:id="@+id/btnConnect" android:textAllCaps="false" android:textSize="13sp" android:paddingStart="8dp" android:paddingEnd="8dp"
                             android:layout_width="0dp"
-                            android:layout_height="44dp"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
                             android:layout_marginEnd="8dp"
                             android:text="@string/btn_connect"
                             app:cornerRadius="12dp"/>
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnDisconnect"
+                            android:id="@+id/btnDisconnect" android:textAllCaps="false" android:textSize="13sp" android:paddingStart="8dp" android:paddingEnd="8dp"
                             android:layout_width="0dp"
-                            android:layout_height="44dp"
+                            android:layout_height="48dp"
                             android:layout_weight="1"
                             android:text="@string/btn_disconnect"
                             android:enabled="false"
@@ -197,7 +202,7 @@
                             <Space android:layout_width="88dp" android:layout_height="80dp"/>
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnForward"
+                                android:id="@+id/btnForward" android:contentDescription="@string/move_forward"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
                                 android:text="▲"
@@ -218,7 +223,7 @@
                             android:layout_marginTop="8dp">
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnLeft"
+                                android:id="@+id/btnLeft" android:contentDescription="@string/turn_left"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
                                 android:text="◄"
@@ -228,7 +233,7 @@
                                 app:backgroundTint="@color/btn_direction"/>
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnStop"
+                                android:id="@+id/btnStop" android:contentDescription="@string/stop_robot"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
                                 android:layout_marginStart="8dp"
@@ -240,7 +245,7 @@
                                 app:backgroundTint="@color/btn_stop"/>
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnRight"
+                                android:id="@+id/btnRight" android:contentDescription="@string/turn_right"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
                                 android:text="►"
@@ -261,7 +266,7 @@
                             <Space android:layout_width="88dp" android:layout_height="80dp"/>
 
                             <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnBackward"
+                                android:id="@+id/btnBackward" android:contentDescription="@string/move_backward"
                                 android:layout_width="80dp"
                                 android:layout_height="80dp"
                                 android:text="▼"
@@ -353,7 +358,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
                         android:layout_marginTop="10dp"
-                        android:text="@string/auto_mode_off"
+                        android:text="@string/toggle_auto"
                         android:enabled="false"
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         app:cornerRadius="12dp"/>

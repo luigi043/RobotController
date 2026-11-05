@@ -16,7 +16,7 @@
     <!-- ── Typography ──────────────────────────────────────────────────────── -->
     <color name="text_primary">#1A1D2E</color>
     <color name="text_secondary">#5A6070</color>
-    <color name="text_hint">#9AA0B0</color>
+    <color name="text_hint">#626A7C</color>
     <color name="text_log">#2C3550</color>
 
     <!-- ── Status indicators ───────────────────────────────────────────────── -->
@@ -29,9 +29,9 @@
     <color name="btn_stop">#B71C1C</color>
 
     <!-- ── RGB colour buttons ──────────────────────────────────────────────── -->
-    <color name="colour_red">#E53935</color>
-    <color name="colour_blue">#1E88E5</color>
-    <color name="colour_green">#43A047</color>
+    <color name="colour_red">#B71C1C</color>
+    <color name="colour_blue">#1565C0</color>
+    <color name="colour_green">#2E7D32</color>
 
     <!-- Material theme colours -->
     <color name="colorPrimary">#1565C0</color>

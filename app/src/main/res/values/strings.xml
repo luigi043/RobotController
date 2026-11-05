@@ -31,4 +31,16 @@
 
     <!-- Hints -->
     <string name="hint_hold">Hold to move · Release to stop</string>
+<string name="start_demo">Start offline demo</string>
+    <string name="simulate_loss">Simulate connection loss</string>
+    <string name="bluetooth_settings">Bluetooth settings</string>
+    <string name="paired_devices">Paired robot</string>
+    <string name="move_forward">Move forward</string>
+    <string name="move_backward">Move backward</string>
+    <string name="turn_left">Turn left</string>
+    <string name="turn_right">Turn right</string>
+    <string name="stop_robot">Stop robot</string>
+    <string name="refresh_devices">Refresh paired devices</string>
+    <string name="toggle_auto">Toggle auto mode</string>
+<string name="app_permissions">App permissions</string>
 </resources>

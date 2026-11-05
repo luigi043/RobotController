@@ -9,31 +9,16 @@
         android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30"/>
 
-    <!-- Location was required for BT scanning on Android 10 / 11 -->
-    <uses-permission
-        android:name="android.permission.ACCESS_FINE_LOCATION"
-        android:maxSdkVersion="30"/>
-    <uses-permission
-        android:name="android.permission.ACCESS_COARSE_LOCATION"
-        android:maxSdkVersion="30"/>
-
-    <!-- ── Modern Bluetooth (API ≥ 31 / Android 12+) ───────────────────────── -->
-    <!--   neverForLocation: we only use paired devices, not nearby scanning   -->
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation"/>
+    <!-- Only paired Classic Bluetooth devices are used, no discovery or location. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
 
-    <!-- ── Vibration feedback ───────────────────────────────────────────────── -->
-    <uses-permission android:name="android.permission.VIBRATE"/>
-
-    <!-- Declare Bluetooth hardware as required -->
+    <!-- Hardware is optional so the offline demo remains available. -->
     <uses-feature
         android:name="android.hardware.bluetooth"
-        android:required="true"/>
+        android:required="false"/>
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@drawable/ic_robot"
         android:label="@string/app_name"
         android:supportsRtl="true"
