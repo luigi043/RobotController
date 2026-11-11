@@ -18,7 +18,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=r
   await button('Simulate connection loss').click();assert.equal(await get('status').textContent(),'Connection error');assert(await button('Move forward').isDisabled());await shot('05-connection-loss');
   await button('Connect demo').click();await button('Disconnect').click();assert(await button('Move forward').isDisabled());await button('Clear log').click();assert.equal(await get('log').textContent(),'No commands yet.');
   await button('Reset simulation').click();assert.equal(await get('colour').textContent(),'Off');assert.equal(await get('robot').evaluate(e=>parseFloat(e.style.top)),50);
-  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await shot('06-phone-disconnected');await button('Connect demo').click();await shot('07-phone-connected');
+  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));const mobileFrame=await page.locator('.phone').boundingBox();assert.equal(mobileFrame.x,0);assert.equal(mobileFrame.width,390);assert(await page.locator('.phone-status').isHidden());await shot('06-phone-disconnected');await button('Connect demo').click();await shot('07-phone-connected');
   assert.deepEqual(errors,[]);console.log('PASS: disabled controls, connect, pointer hold/release and movement, keyboard release, blur STOP, RGB, auto/STOP, loss, reconnect/disconnect, clear, reset, mobile overflow, zero browser errors.');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exitCode=1});

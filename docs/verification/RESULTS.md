@@ -37,3 +37,5 @@ The following source/evidence and publication commits are available in the branc
 ## Remaining limits
 
 No physical phone, robot, account or real private app data was used. Successful physical pairing/RFCOMM, firmware acknowledgements, motor/LED response and radio-loss behavior remain unverified. Debug validation does not establish release/minification compatibility or store readiness. The 26 lint warnings cover existing dependency versions, target API, portrait orientation, backup metadata, overdraw, unused resources and text-resource suggestions. They were not hidden by a lint baseline.
+
+On 2026-11-11, the browser workflow passed in installed Edge after the mobile layout change. The 390px check confirmed the controller starts at the viewport edge, spans its full width, and hides the simulated phone chrome. The two phone-width captures were refreshed.

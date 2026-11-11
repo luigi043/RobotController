@@ -103,9 +103,9 @@
   },
   {
     "file": "style.css",
-    "size": 8025,
-    "sha1": "6b502a99591c18529d5a30eef43083ae6561e2a0",
-    "sha256": "f9b5b1e2432b20a7e7816534709228f7fa24e9a9764b30cb1eedf924983c2cb1"
+    "size": 8972,
+    "sha1": "6b48a4f3dfb211dc0182d37d66dd715cd1ba325e",
+    "sha256": "efffd22c4df5808e9be1997ea50f06597cc0acd222c8716e7d8ac4790bf78f86"
   },
   {
     "file": "vercel.json",
